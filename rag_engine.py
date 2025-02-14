@@ -12,8 +12,17 @@ from langchain.memory import ConversationBufferMemory
 
 import streamlit as st
 
-TMP_DIR = Path(__file__).resolve().parent.joinpath('data', 'tmp')
-LOCAL_VECTOR_STORE_DIR = Path(__file__).resolve().parent.joinpath('data', 'vector_store')
+# 定義目錄路徑
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.joinpath('data')
+TMP_DIR = DATA_DIR.joinpath('tmp')
+LOCAL_VECTOR_STORE_DIR = DATA_DIR.joinpath('vector_store')
+
+# 創建必要的目錄
+def ensure_directories():
+    """確保所有必要的目錄都存在"""
+    for dir_path in [DATA_DIR, TMP_DIR, LOCAL_VECTOR_STORE_DIR]:
+        dir_path.mkdir(parents=True, exist_ok=True)
 
 st.set_page_config(page_title="RAG")
 st.title("Streamlit Showcase: Unleashing the Power of RAG and LangChain")
@@ -26,8 +35,6 @@ if mode == 'Your own LLM':
 elif mode == 'openAI':
     openai_api_base = st.sidebar.text_input('api_base:', type='password')
     openai_api_key = st.sidebar.text_input('key:', type='password')
-
-
 
 def load_documents():
     loader = DirectoryLoader(TMP_DIR.as_posix(), glob='**/*.pdf')
@@ -84,12 +91,10 @@ def add_prompt(llm, query):
     """
     
     input_prompt = PromptTemplate(input_variables=["query"], template=init_Prompt)
-
     return LLMChain(prompt=input_prompt, llm=llm)
 
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Upload Documents", type="pdf", accept_multiple_files=True)
-
 
 def process_documents():
     if not openai_api_base or not openai_api_key:
@@ -97,34 +102,42 @@ def process_documents():
     else:
         try:
             for source_doc in st.session_state.source_docs:
-                #
+                # 確保臨時文件被保存在 tmp 目錄中
                 with tempfile.NamedTemporaryFile(delete=False, dir=TMP_DIR.as_posix(), suffix='.pdf') as tmp_file:
                     tmp_file.write(source_doc.read())
-                #
+                
                 documents = load_documents()
-                #
+                
+                # 清理臨時文件
                 for _file in TMP_DIR.iterdir():
                     temp_file = TMP_DIR.joinpath(_file)
                     temp_file.unlink()
-                #
+                
                 texts = split_documents(documents)
                 st.session_state.retriever = embeddings_on_local_vectordb(texts)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
 def boot():
-    #
+    # 確保必要的目錄存在
+    ensure_directories()
+    
+    # 顯示輸入欄位
     input_fields()
-    #
+    
+    # 添加提交按鈕
     st.button("Submit Documents", on_click=process_documents)
-    #
+    
+    # 初始化消息歷史
     if "messages" not in st.session_state:
         st.session_state.messages = []    
-    #
+    
+    # 顯示歷史消息
     for message in st.session_state.messages:
         st.chat_message('human').write(message[0])
         st.chat_message('ai').write(message[1])    
-    #
+    
+    # 處理新的查詢
     if query := st.chat_input():
         st.chat_message("human").write(query)
 
@@ -136,6 +149,4 @@ def boot():
         st.chat_message("ai").write(response)
 
 if __name__ == '__main__':
-    #
     boot()
-    
