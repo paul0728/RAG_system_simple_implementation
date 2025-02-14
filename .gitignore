@@ -1,0 +1,27 @@
+# 忽略臨時檔案目錄
+tmp/
+
+# 忽略向量儲存目錄
+vector_store/
+
+# 一般 Python 相關忽略規則
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.DS_Store
+
+# 虛擬環境
+venv/
+.env/
+
+# Jupyter Notebook 相關
+.ipynb_checkpoints/
+
+# Log 檔案
+*.log
+
+# IDE 相關
+.vscode/
+.idea/
