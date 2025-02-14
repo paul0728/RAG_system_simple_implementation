@@ -12,9 +12,6 @@ __pycache__/
 *.swp
 .DS_Store
 
-# 虛擬環境
-venv/
-.env/
 
 # Jupyter Notebook 相關
 .ipynb_checkpoints/
